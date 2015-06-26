@@ -20,4 +20,22 @@ class BencodeSpec extends FlatSpec with ShouldMatchers {
     val map = Map[String, Any]("foo" -> 1, "bar" -> 2)
     Bencode.encode(map) should equal("d3:bari2e3:fooi1ee")
   }
+
+  "decode" should "decode an integer" in {
+    Bencode.decode("i555e") should equal(555)
+  }
+
+  "decode" should "decode a string" in {
+    Bencode.decode("3:foo") should equal("foo")
+  }
+
+  "decode" should "decode a list" in {
+    val expected = List[Any](1, "foo")
+    Bencode.decode("li1e3:fooe") should equal(expected)
+  }
+
+  "decode" should "decode a map" in {
+    val expected = Map[String, Any]("bar" -> 2, "foo" -> 1)
+    Bencode.decode("d3:bari2e3:fooi1ee") should equal(expected)
+  }
 }
