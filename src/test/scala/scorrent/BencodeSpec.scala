@@ -22,20 +22,20 @@ class BencodeSpec extends FlatSpec with ShouldMatchers {
   }
 
   "decode" should "decode an integer" in {
-    Bencode.decode("i555e") should equal(555)
+    Bencode.decode("i555e".getBytes) should equal(555)
   }
 
   "decode" should "decode a string" in {
-    Bencode.decode("3:foo") should equal("foo")
+    Bencode.decode("3:foo".getBytes) should equal("foo")
   }
 
   "decode" should "decode a list" in {
     val expected = List[Any](1, "foo")
-    Bencode.decode("li1e3:fooe") should equal(expected)
+    Bencode.decode("li1e3:fooe".getBytes) should equal(expected)
   }
 
   "decode" should "decode a map" in {
     val expected = Map[String, Any]("bar" -> 2, "foo" -> 1)
-    Bencode.decode("d3:bari2e3:fooi1ee") should equal(expected)
+    Bencode.decode("d3:bari2e3:fooi1ee".getBytes) should equal(expected)
   }
 }

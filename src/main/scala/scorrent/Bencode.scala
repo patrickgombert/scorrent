@@ -8,7 +8,7 @@ object Bencode {
   }
 
   def encode(input: String) : String = {
-    input.length + ":" + input
+    input.getBytes("UTF-8").length + ":" + input
   }
 
   def encode(input: List[Any]) : String = {
@@ -27,12 +27,12 @@ object Bencode {
     }
   }
 
-  def decode(input: String) : Any = {
+  def decode(input: Array[Byte]) : Any = {
     doDecode(input)._1
   }
 
-  private def doDecode(input: String) : Tuple2[Any, String] = {
-    input.head match {
+  private def doDecode(input: Array[Byte]) : Tuple2[Any, Array[Byte]] = {
+    input.head.toChar match {
       case 'i' => decodeInt(input.tail)
       case 'l' => decodeList(input.tail)
       case 'd' => decodeMap(input.tail)
@@ -40,17 +40,19 @@ object Bencode {
     }
   }
 
-  private def decodeInt(input: String) : Tuple2[Int, String] = {
-    val int = input.takeWhile(c => c != 'e')
-    (int.toInt, input.substring(int.length + 1, input.length))
+  private def decodeInt(input: Array[Byte]) : Tuple2[Int, Array[Byte]] = {
+    val int = input.takeWhile(c => c != 'e'.toByte)
+    val decodedInt = int.foldLeft("")(_ + _.toChar).toInt
+    val rest = input.slice(int.length + 1, input.length)
+    (decodedInt, rest)
   }
 
-  private def decodeList(input: String) : Tuple2[List[Any], String] = {
+  private def decodeList(input: Array[Byte]) : Tuple2[List[Any], Array[Byte]] = {
     doDecodeList((List[Any](), input))
   }
 
-  private def doDecodeList(accumulator: Tuple2[List[Any], String]) : Tuple2[List[Any], String] = {
-    if (accumulator._2.head == 'e') {
+  private def doDecodeList(accumulator: Tuple2[List[Any], Array[Byte]]) : Tuple2[List[Any], Array[Byte]] = {
+    if (accumulator._2.head.toChar == 'e') {
       (accumulator._1, accumulator._2.tail)
     } else {
       val res = doDecode(accumulator._2)
@@ -58,12 +60,12 @@ object Bencode {
     }
   }
 
-  private def decodeMap(input: String) : Tuple2[Map[String, Any], String] = {
+  private def decodeMap(input: Array[Byte]) : Tuple2[Map[String, Any], Array[Byte]] = {
     doDecodeMap((ListMap[String, Any](), input))
   }
 
-  private def doDecodeMap(accumulator: Tuple2[Map[String, Any], String]) : Tuple2[Map[String, Any], String] = {
-    if (accumulator._2.head == 'e') {
+  private def doDecodeMap(accumulator: Tuple2[Map[String, Any], Array[Byte]]) : Tuple2[Map[String, Any], Array[Byte]] = {
+    if (accumulator._2.head.toChar == 'e') {
       (accumulator._1, accumulator._2.tail)
     } else {
       val key = doDecode(accumulator._2)
@@ -72,15 +74,15 @@ object Bencode {
     }
   }
 
-  private def decodeString(input: String) : Tuple2[String, String] = {
-    val size = input.takeWhile(c => c != ':')
+  private def decodeString(input: Array[Byte]) : Tuple2[String, Array[Byte]] = {
+    val size = input.takeWhile(c => c.toChar != ':')
     val frontLength = size.length + 1
-    val stringLength = frontLength + size.toInt
-    val str = input.substring(frontLength, stringLength)
+    val stringLength = frontLength + size.foldLeft("")(_ + _.toChar).toInt
+    val str = input.slice(frontLength, stringLength).foldLeft("")(_ + _.toChar)
     if (stringLength == input.size) {
-      (str, "")
+      (str, Array[Byte]())
     } else {
-      (str, input.substring(stringLength, input.size))
+      (str, input.slice(stringLength, input.size))
     }
   }
 }
