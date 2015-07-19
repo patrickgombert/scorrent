@@ -1,4 +1,4 @@
-package scorrent;
+package scorrent.bencode;
 
 import scala.collection.immutable.ListMap
 

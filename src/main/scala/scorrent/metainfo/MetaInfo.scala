@@ -1,5 +1,6 @@
-package scorrent
+package scorrent.metainfo
 
+import scorrent.bencode.Bencode
 import java.nio.file.{Paths, Files}
 
 case class MetaInfo (

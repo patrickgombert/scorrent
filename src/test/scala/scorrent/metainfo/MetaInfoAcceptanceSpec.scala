@@ -1,4 +1,4 @@
-package scorrent;
+package scorrent.metainfo;
 
 import org.scalatest._
 import java.nio.file.{Paths, Files}

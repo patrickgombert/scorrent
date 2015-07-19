@@ -1,4 +1,4 @@
-package scorrent
+package scorrent.metainfo
 
 case class MetaInfoFile (
   length: Int,

@@ -1,5 +1,6 @@
-package scorrent;
+package scorrent.peer;
 
+import scorrent.util.Conversion
 import java.io.{OutputStream, ByteArrayOutputStream}
 import org.scalatest._
 
@@ -22,7 +23,7 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
     val outBytes = withOutputStream { outputStream =>
       PeerCommand.sendKeepAlive(outputStream)
     }
-    outBytes should equal(Util.intToByteArray(0))
+    outBytes should equal(Conversion.intToByteArray(0))
   }
 
   "sendChoke" should "write a message with id 0" in {
@@ -45,16 +46,16 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
     val outBytes = withOutputStream { outputStream =>
       PeerCommand.sendHave(outputStream, 42)
     }
-    outBytes.slice(0, 4) should equal(Util.intToByteArray(5))
+    outBytes.slice(0, 4) should equal(Conversion.intToByteArray(5))
     outBytes(4)          should equal(4.toByte)
-    outBytes.slice(5, 9) should equal(Util.intToByteArray(42))
+    outBytes.slice(5, 9) should equal(Conversion.intToByteArray(42))
   }
 
   "sendBitfield" should "write a message with id 5 and the bitfield" in {
     val outBytes = withOutputStream { outputStream =>
       PeerCommand.sendBitfield(outputStream, Array[Byte](1.toByte, 0.toByte))
     }
-    outBytes.slice(0, 4) should equal(Util.intToByteArray(3))
+    outBytes.slice(0, 4) should equal(Conversion.intToByteArray(3))
     outBytes(4)          should equal(5.toByte)
     outBytes.slice(5, 7) should equal(Array[Byte](1.toByte, 0.toByte))
   }
@@ -63,21 +64,21 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
     val outBytes = withOutputStream { outputStream =>
       PeerCommand.sendRequest(outputStream, 1, 5, 20)
     }
-    outBytes.slice(0, 4)   should equal(Util.intToByteArray(13))
+    outBytes.slice(0, 4)   should equal(Conversion.intToByteArray(13))
     outBytes(4)            should equal(6.toByte)
-    outBytes.slice(5, 9)   should equal(Util.intToByteArray(1))
-    outBytes.slice(9, 13)  should equal(Util.intToByteArray(5))
-    outBytes.slice(13, 17) should equal(Util.intToByteArray(20))
+    outBytes.slice(5, 9)   should equal(Conversion.intToByteArray(1))
+    outBytes.slice(9, 13)  should equal(Conversion.intToByteArray(5))
+    outBytes.slice(13, 17) should equal(Conversion.intToByteArray(20))
   }
 
   "sendPiece" should "write a message with id 7, the index, the begin offset and the data block" in {
     val outBytes = withOutputStream { outputStream =>
       PeerCommand.sendPiece(outputStream, 1, 3, Array[Byte](0.toByte, 5.toByte))
     }
-    outBytes.slice(0, 4)   should equal(Util.intToByteArray(11))
+    outBytes.slice(0, 4)   should equal(Conversion.intToByteArray(11))
     outBytes(4)            should equal(7.toByte)
-    outBytes.slice(5, 9)   should equal(Util.intToByteArray(1))
-    outBytes.slice(9, 13)  should equal(Util.intToByteArray(3))
+    outBytes.slice(5, 9)   should equal(Conversion.intToByteArray(1))
+    outBytes.slice(9, 13)  should equal(Conversion.intToByteArray(3))
     outBytes.slice(13, 15) should equal(Array[Byte](0.toByte, 5.toByte))
   }
 
@@ -85,25 +86,25 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
     val outBytes = withOutputStream { outputStream =>
       PeerCommand.sendCancel(outputStream, 1, 5, 20)
     }
-    outBytes.slice(0, 4)   should equal(Util.intToByteArray(13))
+    outBytes.slice(0, 4)   should equal(Conversion.intToByteArray(13))
     outBytes(4)            should equal(8.toByte)
-    outBytes.slice(5, 9)   should equal(Util.intToByteArray(1))
-    outBytes.slice(9, 13)  should equal(Util.intToByteArray(5))
-    outBytes.slice(13, 17) should equal(Util.intToByteArray(20))
+    outBytes.slice(5, 9)   should equal(Conversion.intToByteArray(1))
+    outBytes.slice(9, 13)  should equal(Conversion.intToByteArray(5))
+    outBytes.slice(13, 17) should equal(Conversion.intToByteArray(20))
   }
 
   "sendPort" should "write a message with id 9 and the listen port" in {
     val outBytes = withOutputStream { outputStream =>
       PeerCommand.sendPort(outputStream, 3030)
     }
-    outBytes.slice(0, 4) should equal(Util.intToByteArray(3))
+    outBytes.slice(0, 4) should equal(Conversion.intToByteArray(3))
     outBytes(4)          should equal(9.toByte)
     outBytes.slice(5, 9) should equal(Array[Byte](11.toByte, -42.toByte))
   }
 
   private def shouldSendId(id: Int, command: (OutputStream) => Unit) {
     val outBytes = withOutputStream { o => command(o) }
-    outBytes.slice(0, 4) should equal(Util.intToByteArray(1))
+    outBytes.slice(0, 4) should equal(Conversion.intToByteArray(1))
     outBytes(4)          should equal(id.toByte)
   }
 

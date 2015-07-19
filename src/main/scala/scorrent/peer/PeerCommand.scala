@@ -1,5 +1,6 @@
-package scorrent;
+package scorrent.peer;
 
+import scorrent.util.Conversion
 import java.io.OutputStream
 import scala.util.Random
 
@@ -57,7 +58,7 @@ object PeerCommand {
   }
 
   def sendPort(out: OutputStream, listenPort: Int) {
-    sendIdMessage(out, 9, Util.intToByteArray(listenPort).slice(2, 4))
+    sendIdMessage(out, 9, Conversion.intToByteArray(listenPort).slice(2, 4))
   }
 
   private def sendIdMessage(out: OutputStream, id: Int, args: Any*) {
@@ -67,7 +68,7 @@ object PeerCommand {
   }
 
   private def toBytes(arg: Any) : Array[Byte] = arg match {
-    case i: Int => Util.intToByteArray(i)
+    case i: Int => Conversion.intToByteArray(i)
     case v: Array[Byte] => v
   }
 
