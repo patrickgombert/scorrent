@@ -7,8 +7,8 @@ import org.scalatest._
 class PeerCommandSpec extends FlatSpec with ShouldMatchers {
   "sendHandshake" should "write the handshake to the stream" in {
     val infoHash = new Array[Byte](20)
-    val outBytes = withOutputStream { outputStream =>
-      PeerCommand.sendHandshake(outputStream, infoHash)
+    val outBytes = withOutputStream { peer =>
+      peer.sendHandshake(infoHash)
     }
 
     outBytes.head          should equal(19.toByte)
@@ -20,31 +20,39 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
   }
 
   "sendKeepAlive" should "write a keepalive to the stream" in {
-    val outBytes = withOutputStream { outputStream =>
-      PeerCommand.sendKeepAlive(outputStream)
+    val outBytes = withOutputStream { peer =>
+      peer.sendKeepAlive
     }
     outBytes should equal(Conversion.intToByteArray(0))
   }
 
   "sendChoke" should "write a message with id 0" in {
-    shouldSendId(0, PeerCommand.sendChoke)
+    val outBytes = withOutputStream { p => p.sendChoke }
+    outBytes.slice(0, 4) should equal(Conversion.intToByteArray(1))
+    outBytes(4)          should equal(0.toByte)
   }
 
   "sendUnchoke" should "write a message with id 1" in {
-    shouldSendId(1, PeerCommand.sendUnchoke)
+    val outBytes = withOutputStream { p => p.sendUnchoke }
+    outBytes.slice(0, 4) should equal(Conversion.intToByteArray(1))
+    outBytes(4)          should equal(1.toByte)
   }
 
   "sendInterested" should "write a message with id 2" in {
-    shouldSendId(2, PeerCommand.sendInterested)
+    val outBytes = withOutputStream { p => p.sendInterested }
+    outBytes.slice(0, 4) should equal(Conversion.intToByteArray(1))
+    outBytes(4)          should equal(2.toByte)
   }
 
   "sendNotInterested" should "write a message with id 3" in {
-    shouldSendId(3, PeerCommand.sendNotInterested)
+    val outBytes = withOutputStream { p => p.sendNotInterested }
+    outBytes.slice(0, 4) should equal(Conversion.intToByteArray(1))
+    outBytes(4)          should equal(3.toByte)
   }
 
   "sendHave" should "write a message with id 4 and the index" in {
-    val outBytes = withOutputStream { outputStream =>
-      PeerCommand.sendHave(outputStream, 42)
+    val outBytes = withOutputStream { peer =>
+      peer.sendHave(42)
     }
     outBytes.slice(0, 4) should equal(Conversion.intToByteArray(5))
     outBytes(4)          should equal(4.toByte)
@@ -52,8 +60,8 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
   }
 
   "sendBitfield" should "write a message with id 5 and the bitfield" in {
-    val outBytes = withOutputStream { outputStream =>
-      PeerCommand.sendBitfield(outputStream, Array[Byte](1.toByte, 0.toByte))
+    val outBytes = withOutputStream { peer =>
+      peer.sendBitfield(Array[Byte](1.toByte, 0.toByte))
     }
     outBytes.slice(0, 4) should equal(Conversion.intToByteArray(3))
     outBytes(4)          should equal(5.toByte)
@@ -61,8 +69,8 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
   }
 
   "sendRequest" should "write a message with id 6, the index, the begin offset and the length" in {
-    val outBytes = withOutputStream { outputStream =>
-      PeerCommand.sendRequest(outputStream, 1, 5, 20)
+    val outBytes = withOutputStream { peer =>
+      peer.sendRequest(1, 5, 20)
     }
     outBytes.slice(0, 4)   should equal(Conversion.intToByteArray(13))
     outBytes(4)            should equal(6.toByte)
@@ -72,8 +80,8 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
   }
 
   "sendPiece" should "write a message with id 7, the index, the begin offset and the data block" in {
-    val outBytes = withOutputStream { outputStream =>
-      PeerCommand.sendPiece(outputStream, 1, 3, Array[Byte](0.toByte, 5.toByte))
+    val outBytes = withOutputStream { peer =>
+      peer.sendPiece(1, 3, Array[Byte](0.toByte, 5.toByte))
     }
     outBytes.slice(0, 4)   should equal(Conversion.intToByteArray(11))
     outBytes(4)            should equal(7.toByte)
@@ -83,8 +91,8 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
   }
 
   "sendCancel" should "write a message with id 8, the index, the begin offset and the length" in {
-    val outBytes = withOutputStream { outputStream =>
-      PeerCommand.sendCancel(outputStream, 1, 5, 20)
+    val outBytes = withOutputStream { peer =>
+      peer.sendCancel(1, 5, 20)
     }
     outBytes.slice(0, 4)   should equal(Conversion.intToByteArray(13))
     outBytes(4)            should equal(8.toByte)
@@ -94,23 +102,18 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
   }
 
   "sendPort" should "write a message with id 9 and the listen port" in {
-    val outBytes = withOutputStream { outputStream =>
-      PeerCommand.sendPort(outputStream, 3030)
+    val outBytes = withOutputStream { peer =>
+      peer.sendPort(3030)
     }
     outBytes.slice(0, 4) should equal(Conversion.intToByteArray(3))
     outBytes(4)          should equal(9.toByte)
     outBytes.slice(5, 9) should equal(Array[Byte](11.toByte, -42.toByte))
   }
 
-  private def shouldSendId(id: Int, command: (OutputStream) => Unit) {
-    val outBytes = withOutputStream { o => command(o) }
-    outBytes.slice(0, 4) should equal(Conversion.intToByteArray(1))
-    outBytes(4)          should equal(id.toByte)
-  }
-
-  private def withOutputStream(context: (OutputStream) => Unit) : Array[Byte] = {
+  private def withOutputStream(context: (Peer) => Unit) : Array[Byte] = {
     val outputStream = new ByteArrayOutputStream
-    context(outputStream)
+    val peer = new Peer(null, outputStream)
+    context(peer)
     val ret = outputStream.toByteArray
     outputStream.close
     ret
