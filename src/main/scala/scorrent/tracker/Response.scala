@@ -1,6 +1,7 @@
 package scorrent.tracker;
 
 import scorrent.bencode.Bencode
+import scorrent.util.Conversion
 
 sealed trait TrackerResponse
 
@@ -25,22 +26,10 @@ object TrackerResponse {
       FailedResponse(failureReason = response("failure reason").asInstanceOf[String])
     } else {
       SuccessResponse(
-        warningMessage =
-          if (response.contains("warning message"))
-            Some(response("warning message").asInstanceOf[String])
-          else
-            None,
+        warningMessage = Conversion.mapEntryOption[String](response, "warning message"),
         interval = response("interval").asInstanceOf[Int],
-        minInterval =
-          if (response.contains("min interval"))
-            Some(response("min interval").asInstanceOf[Int])
-          else
-            None,
-        trackerId =
-          if (response.contains("tracker id"))
-            Some(response("tracker id").asInstanceOf[String])
-          else
-            None,
+        minInterval = Conversion.mapEntryOption[Int](response, "min interval"),
+        trackerId = Conversion.mapEntryOption[String](response, "tracker id"),
         complete = response("complete").asInstanceOf[Int],
         incomplete = response("incomplete").asInstanceOf[Int],
         peers = Peer.fromAny(response("peers"))

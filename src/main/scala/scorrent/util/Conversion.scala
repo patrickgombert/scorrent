@@ -10,4 +10,11 @@ object Conversion {
   def unsignedByteToInt(b: Byte) : Int = {
     b & 0xFF
   }
+
+  def mapEntryOption[T](m: Map[String, Any], k: String) : Option[T] = {
+    if (m.contains(k))
+      Some(m(k).asInstanceOf[T])
+    else
+      None
+  }
 }

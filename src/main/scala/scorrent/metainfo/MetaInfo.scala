@@ -1,7 +1,8 @@
 package scorrent.metainfo
 
-import scorrent.bencode.Bencode
 import java.nio.file.{Paths, Files}
+import scorrent.bencode.Bencode
+import scorrent.util.Conversion
 
 case class MetaInfo (
   info: MetaInfoDict,
@@ -28,26 +29,10 @@ object MetaInfo {
           (m("announce-list").asInstanceOf[List[List[String]]].flatten :+ announce).toSet
         else
           Set(announce),
-      creationDate =
-        if (m.contains("creation date"))
-          Some(m("creation date").asInstanceOf[Int])
-        else
-          None,
-      comment =
-        if (m.contains("comment"))
-          Some(m("comment").asInstanceOf[String])
-        else
-          None,
-      createdBy =
-        if (m.contains("created by"))
-          Some(m("created by").asInstanceOf[String])
-        else
-          None,
-      encoding =
-        if (m.contains("encoding"))
-          Some(m("encoding").asInstanceOf[String])
-        else
-          None
+      creationDate = Conversion.mapEntryOption[Int](m, "creation date"),
+      comment = Conversion.mapEntryOption[String](m, "comment"),
+      createdBy = Conversion.mapEntryOption[String](m, "created by"),
+      encoding = Conversion.mapEntryOption[String](m, "encoding")
     )
   }
 }

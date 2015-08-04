@@ -1,5 +1,7 @@
 package scorrent.metainfo
 
+import scorrent.util.Conversion
+
 case class MetaInfoDict (
   files: List[MetaInfoFile],
   pieceLength: Int,
@@ -23,11 +25,7 @@ object MetaInfoDict {
         MetaInfoFile(
           length = file("length").asInstanceOf[Int],
           path = file("path").asInstanceOf[String],
-          md5sum =
-            if (m.contains("md5sum"))
-              Some(m("md5sum").asInstanceOf[String])
-            else
-              None
+          md5sum = Conversion.mapEntryOption[String](m, "md5sum")
         )
       )
     else
@@ -35,11 +33,7 @@ object MetaInfoDict {
         MetaInfoFile(
           length = m("length").asInstanceOf[Int],
           path = m("name").asInstanceOf[String],
-          md5sum =
-            if (m.contains("md5sum"))
-              Some(m("md5sum").asInstanceOf[String])
-            else
-              None
+          md5sum = Conversion.mapEntryOption[String](m, "md5sum")
         )
       )
   }
