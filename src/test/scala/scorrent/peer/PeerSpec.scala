@@ -1,7 +1,7 @@
 package scorrent.peer;
 
 import scorrent.util.Conversion
-import java.io.{OutputStream, ByteArrayOutputStream}
+import java.io.{OutputStream, ByteArrayOutputStream, InputStream, ByteArrayInputStream}
 import org.scalatest._
 
 class PeerCommandSpec extends FlatSpec with ShouldMatchers {
@@ -17,6 +17,27 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
     outBytes.slice(28, 48) should equal(infoHash)
     outBytes.slice(48, 56) should equal("-SC0001-".getBytes)
     outBytes.length        should equal(68)
+  }
+
+  val okHandshake = Array[Byte](19.toByte) ++ "BitTorrent protocol".getBytes ++ new Array[Byte](28) ++ "-SC0001-".getBytes ++ new Array[Byte](12)
+
+  "receiveHandshake" should "return true for a successful handshake" in {
+    val status = withInputStream(okHandshake, { peer =>
+      peer.receiveHandshake
+    })
+    status match {
+      case _ : OKPeerStatus => assert(true)
+      case _ => fail()
+    }
+  }
+
+  "receiveHandshake" should "set the infoHash and peerId" in {
+    withInputStream(okHandshake, { peer =>
+      val ret = peer.receiveHandshake
+      peer.infoHash should equal(new Array[Byte](20))
+      peer.peerId should equal("-SC0001-".getBytes ++ new Array[Byte](12))
+      ret
+    })
   }
 
   "sendKeepAlive" should "write a keepalive to the stream" in {
@@ -116,6 +137,14 @@ class PeerCommandSpec extends FlatSpec with ShouldMatchers {
     context(peer)
     val ret = outputStream.toByteArray
     outputStream.close
+    ret
+  }
+
+  private def withInputStream(bytes: Array[Byte], context: (Peer) => PeerStatus) : PeerStatus = {
+    val inputStream = new ByteArrayInputStream(bytes)
+    val peer = new Peer(inputStream, null)
+    val ret = context(peer)
+    inputStream.close
     ret
   }
 }

@@ -5,9 +5,16 @@ import java.io.{InputStream, OutputStream}
 import scorrent.util.Conversion
 import scala.util.Random
 
+sealed trait PeerStatus
+
+case class OKPeerStatus() extends PeerStatus
+case class FailedPeerStatus(reason: String) extends PeerStatus
+
 class Peer(inputStream: InputStream, outputStream: OutputStream) {
   var amChoking = false
   var peerChoking = false
+  var infoHash = Array[Byte]()
+  var peerId = Array[Byte]()
 
   def sendHandshake(infoHash: Array[Byte]) {
     var randBytes = new Array[Byte](12)
@@ -19,6 +26,24 @@ class Peer(inputStream: InputStream, outputStream: OutputStream) {
                    "-SC0001-".getBytes ++
                    randBytes
     outputStream.write(outBytes)
+  }
+
+  def receiveHandshake() : PeerStatus = {
+    val rawHandshake = new Array[Byte](68)
+    val bytesRead = inputStream.read(rawHandshake, 0, 68)
+    if (bytesRead == 68) {
+      val protocolLength = rawHandshake.head
+      val protocol = new String(rawHandshake.tail.take(protocolLength))
+      if (protocol == "BitTorrent protocol") {
+        infoHash = rawHandshake.slice(28, 48)
+        peerId = rawHandshake.slice(48, 68)
+        OKPeerStatus()
+      } else {
+        FailedPeerStatus("Not using BitTorrent protocol")
+      }
+    } else {
+      FailedPeerStatus("Failed to receive handshake")
+    }
   }
 
   def sendKeepAlive() {
@@ -65,6 +90,11 @@ class Peer(inputStream: InputStream, outputStream: OutputStream) {
     sendIdMessage(9, Conversion.intToByteArray(listenPort).slice(2, 4))
   }
 
+  def close() {
+    inputStream.close
+    outputStream.close
+  }
+
   private def sendIdMessage(id: Int, args: Any*) {
     val argBytes = args.foldLeft(Array[Byte]())(_ ++ toBytes(_))
     val outBytes = (toBytes(argBytes.length + 1) :+ id.toByte) ++ argBytes
@@ -76,3 +106,4 @@ class Peer(inputStream: InputStream, outputStream: OutputStream) {
     case v: Array[Byte] => v
   }
 }
+
